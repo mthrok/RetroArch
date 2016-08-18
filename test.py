@@ -11,7 +11,7 @@ class RAInterface(object):
         self.rom = os.path.abspath(rom)
         self.core = os.path.abspath(core)
 
-    def start(self):
+    def init(self):
         self.ra = rarch.RA_new()
 
         argc = ctypes.c_int(4)
@@ -21,11 +21,20 @@ class RAInterface(object):
             '-L', self.core
         )
 
-        rarch.start(self.ra, argc, argv)
+        rarch.init(self.ra, argc, argv)
 
     def step(self):
         return rarch.step(self.ra)
 
+    def run(self):
+        return rarch.run(self.ra)
+
 ra = RAInterface('super_mario_world.zip',
                  'snes9x2010_libretro.so')
-ra.start()
+ra.init()
+# ra.run()
+for i in range(500):
+    ret = ra.step()
+    time.sleep(1/30)
+    if ret == -1:
+        break

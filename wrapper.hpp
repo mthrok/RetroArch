@@ -18,13 +18,12 @@ extern "C" {
     RAInterface() {};
     ~RAInterface() {};
 
-    void start_(void) {
+    void start(void) {
         rarch_main(0, {}, NULL);
     };
 
-    void start(int argc, char *argv[]) {
+    void init(int argc, char *argv[]) {
       void *args = NULL;
-      int ret;
 
       rarch_ctl(RARCH_CTL_PREINIT, NULL);
       frontend_driver_init_first(args);
@@ -48,7 +47,10 @@ extern "C" {
          return;
       }
       ui_companion_driver_init_first();
+    }
 
+    void run(void) {
+      int ret;
       do {
         unsigned sleep_ms = 0;
         ret = runloop_iterate(&sleep_ms);
@@ -56,18 +58,33 @@ extern "C" {
           retro_sleep(sleep_ms);
         task_queue_ctl(TASK_QUEUE_CTL_CHECK, NULL);
       } while (ret != -1);
-      main_exit(args);
+      main_exit(NULL);
     };
+
+    int step(void) {
+      unsigned sleep_ms = 0;
+      int ret = runloop_iterate(&sleep_ms);
+      task_queue_ctl(TASK_QUEUE_CTL_CHECK, NULL);
+      return ret;
+    }
   };
 
   RAInterface *RA_new() { return new RAInterface(); }
 
   void RA_del(RAInterface *ra) { delete ra; };
 
-  void start_(RAInterface *ra) { ra->start_(); };
+  void start(RAInterface *ra) { ra->start(); };
 
-  void start(RAInterface *ra, int argc, char *argv[]) {
-    ra->start(argc, argv);
+  void init(RAInterface *ra, int argc, char *argv[]) {
+    ra->init(argc, argv);
+  };
+
+  void run(RAInterface *ra) {
+    ra->run();
+  };
+
+  void step(RAInterface *ra) {
+    ra->step();
   };
 }
 
