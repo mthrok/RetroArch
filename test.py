@@ -29,6 +29,10 @@ class RAInterface(object):
     def run(self):
         return rarch.run(self.ra)
 
+    def stop(self):
+        rarch.stop(self.ra)
+        rarch.RA_del(self.ra)
+
 ra = RAInterface('super_mario_world.zip',
                  'snes9x2010_libretro.so')
 ra.init()
@@ -38,3 +42,4 @@ for i in range(500):
     time.sleep(1/30)
     if ret == -1:
         break
+ra.stop()
