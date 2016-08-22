@@ -26,6 +26,10 @@ extern "C" {
   void stop(RAInterface *ra) {
     ra->stop();
   }
+
+  void get_config(RAInterface *ra) {
+    ra->get_config();
+  }
 }
 
 #endif

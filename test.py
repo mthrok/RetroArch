@@ -1,7 +1,6 @@
 import os
 import time
 import ctypes
-import threading
 
 rarch = ctypes.cdll.LoadLibrary('./wrapper.so')
 
@@ -33,13 +32,18 @@ class RAInterface(object):
         rarch.stop(self.ra)
         rarch.RA_del(self.ra)
 
+    def get_config(self):
+        rarch.get_config(self.ra)
+
+
 ra = RAInterface('super_mario_world.zip',
                  'snes9x2010_libretro.so')
 ra.init()
 # ra.run()
 for i in range(500):
     ret = ra.step()
-    time.sleep(1/30)
+    # time.sleep(1/30)
+    ra.get_config()
     if ret == -1:
         break
 ra.stop()
