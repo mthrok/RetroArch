@@ -30,6 +30,23 @@ extern "C" {
   void get_config(RAInterface *ra) {
     ra->get_config();
   }
+
+  void get_screen_info(RAInterface *ra) {
+    ra->get_screen_info();
+  }
+
+  uint64_t get_frame_count(RAInterface *ra) {
+    return ra->get_frame_count();
+  }
+
+  void get_frame(RAInterface *ra, const void **data,
+                  unsigned *width, unsigned *height, size_t *pitch) {
+    ra->get_frame(data, width, height, pitch);
+  }
+
+  int get_pixel_format(RAInterface *ra) {
+    return ra->get_pixel_format();
+  }
 }
 
 #endif

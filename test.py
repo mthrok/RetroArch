@@ -1,6 +1,13 @@
+from __future__ import division
+from __future__ import print_function
+
 import os
 import time
 import ctypes
+
+import numpy as np
+import scipy.misc
+
 
 rarch = ctypes.cdll.LoadLibrary('./wrapper.so')
 
@@ -10,16 +17,26 @@ class RAInterface(object):
         self.rom = os.path.abspath(rom)
         self.core = os.path.abspath(core)
 
+        self.ra = None
+
+        self.frame_data = ctypes.c_void_p()
+        self.frame_width = ctypes.c_uint()
+        self.frame_height = ctypes.c_uint()
+        self.frame_pitch = ctypes.c_size_t()
+
+        self.frame_data_ = ctypes.byref(self.frame_data)
+        self.frame_width_ = ctypes.byref(self.frame_width)
+        self.frame_height_ = ctypes.byref(self.frame_height)
+        self.frame_pitch_ = ctypes.byref(self.frame_pitch)
+
     def init(self):
         self.ra = rarch.RA_new()
-
         argc = ctypes.c_int(4)
         argv = (ctypes.c_char_p * 4)(
             'retroarch',
             self.rom,
             '-L', self.core
         )
-
         rarch.init(self.ra, argc, argv)
 
     def step(self):
@@ -35,6 +52,43 @@ class RAInterface(object):
     def get_config(self):
         rarch.get_config(self.ra)
 
+    def get_screen_info(self):
+        rarch.get_screen_info(self.ra)
+
+    def get_frame_count(self):
+        return rarch.get_frame_count(self.ra)
+
+    def get_frame(self):
+        rarch.get_frame(
+            self.ra, self.frame_data_,
+            self.frame_width_, self.frame_height_,
+            self.frame_pitch_
+        )
+
+        pixel_format = rarch.get_pixel_format(self.ra)
+        if pixel_format == 2:
+            # RETRO_PIXEL_FORMAT_RGB565
+            data = ctypes.cast(self.frame_data,
+                               ctypes.POINTER(ctypes.c_ushort))
+            height = self.frame_height.value
+            width = self.frame_width.value
+            pitch = self.frame_pitch.value
+            shape = (height, pitch // 2)
+            arr = np.ctypeslib.as_array(data, shape=shape)
+            arr = arr[:, :width]
+            img = np.zeros((height, width, 3), dtype=np.float)
+            # Red
+            img[:, :, 0] = ((arr & 0b1111100000000000) >> 11) / (2 ** 5)
+            # Green
+            img[:, :, 1] = ((arr & 0b0000011111100000) >> 5) / (2 ** 6)
+            # Blue
+            img[:, :, 2] = ((arr & 0b0000000000011111) / (2 ** 5))
+            return img
+        else:
+            # RETRO_PIXEL_FORMAT_0RGB1555
+            # RETRO_PIXEL_FORMAT_XRGB8888
+            # RETRO_PIXEL_FORMAT_UNKNOWN
+            raise NotImplementedError()
 
 ra = RAInterface('super_mario_world.zip',
                  'snes9x2010_libretro.so')
@@ -43,7 +97,13 @@ ra.init()
 for i in range(500):
     ret = ra.step()
     # time.sleep(1/30)
-    ra.get_config()
+    frame_count = ra.get_frame_count()
+    if frame_count % 400 == 399:
+        ra.get_config()
+        ra.get_screen_info()
+        frame = ra.get_frame()
+        scipy.misc.toimage(frame, cmin=0, cmax=1.0).save('frame.png')
+        break
     if ret == -1:
         break
 ra.stop()

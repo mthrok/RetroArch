@@ -1411,6 +1411,15 @@ int runloop_iterate_(unsigned *sleep_ms)
    cmd.state[0]                                 = input_keys_pressed();
    last_input                                   = cmd.state[0];
 
+   // state is retro_input_t type
+   for (unsigned key = 0; key < RARCH_BIND_LIST_END; ++key) {
+     uint64_t state = last_input.state;
+     if (state & (UINT64_C(1) << (key))) {
+       printf("key %u (type: %d) was pressed.\n", key, last_input.type);
+     }
+   }
+
+
    runloop_ctl(RUNLOOP_CTL_UNSET_FRAME_TIME_LAST, NULL);
 
    if (runloop_ctl(RUNLOOP_CTL_SHOULD_SET_FRAME_LIMIT, NULL))
@@ -1634,8 +1643,23 @@ end:
 #include "tasks/tasks_internal.h"
 
 class RAInterface {
+  settings_t *settings_;
+  size_t frame_pitch_;
+  void *frame_data_;
 public:
-  RAInterface() {};
+  unsigned frame_width;
+  unsigned frame_height;
+  uint64_t *frame_count;
+
+  RAInterface()
+    : settings_()
+    , frame_pitch_()
+    , frame_data_()
+    , frame_width()
+    , frame_height()
+    , frame_count(NULL)
+  {};
+
   ~RAInterface() {};
 
   // RetroArch original main function
@@ -1681,6 +1705,10 @@ public:
         return;
     }
     ui_companion_driver_init_first();
+
+    // Intialize pointers
+    settings_ = config_get_ptr();
+    frame_count = video_driver_get_frame_count_ptr();
   }
 
   int step(void) {
@@ -1690,10 +1718,33 @@ public:
     return ret;
   }
 
+  void stop(void) {
+    main_exit(NULL);
+  }
+
+  void get_frame(const void **data, unsigned *width,
+                 unsigned *height, size_t *pitch) {
+    video_driver_cached_frame_get(data, width, height, pitch);
+  }
+
+  int get_pixel_format(void) {
+    return video_driver_get_pixel_format();
+  }
+
+  uint64_t get_frame_count(void) {
+    return *frame_count;
+  }
+
   void get_config(void) {
-    settings_t *settings = config_get_ptr();
-    for (size_t i = 0; i < 1/*MAX_USERS*/; ++i) {
-      struct retro_keybind *bind = settings->input.binds[i];
+    printf("driver: %s\n",
+           settings_->input.driver);
+    printf("joypad_driver: %s\n",
+           settings_->input.joypad_driver);
+    printf("keyboard_layout: %s\n",
+           settings_->input.keyboard_layout);
+    for (size_t i = 0; i < settings_->input.max_users; ++i) {
+      struct retro_keybind *bind = settings_->input.autoconf_binds[i];
+      // printf("device_names: %s\n", settings->input.device_names[i]);
       // printf("User: %zu\n", i);
       for (size_t j = 0; j < RARCH_BIND_LIST_END; ++j) {
         struct retro_keybind bind_ = bind[j];
@@ -1731,8 +1782,8 @@ public:
         if (bind_.id > 23) {
           continue;
         }
-        if (bind_.joykey == 0xFFFF &&
-            bind_.joyaxis == 0xFFFFFFFF) {
+        if (bind_.joykey == 65535 &&
+            bind_.joyaxis == 4294967296) {
           continue;
         }
         printf("  %02zu: %03d %s:\n", j, bind_.key, bind_.desc);
@@ -1746,8 +1797,20 @@ public:
     }
   };
 
-  void stop(void) {
-    main_exit(NULL);
+  void get_screen_info(void) {
+    switch(video_driver_get_pixel_format()) {
+    case RETRO_PIXEL_FORMAT_0RGB1555:
+      printf("RETRO_PIXEL_FORMAT_0RGB1555\n");
+      break;
+    case RETRO_PIXEL_FORMAT_XRGB8888:
+      printf("RETRO_PIXEL_FORMAT_XRGB8888\n");
+      break;
+    case RETRO_PIXEL_FORMAT_RGB565:
+      printf("RETRO_PIXEL_FORMAT_RGB565\n");
+      break;
+    default:
+      printf("RETRO_PIXEL_FORMAT_UNKNOWN\n");
+    }
   }
 };
 
