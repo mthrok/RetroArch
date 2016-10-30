@@ -6,33 +6,8 @@
 %}
 
 %inline %{
-// RetroArch original entory point
-void start_rarch(char* core, char* rom) {
-  char* source = "retroarch";
-  char* opt = "-L";
-  char* argv[] = {source, rom, opt, core};
-  rarch_main(4, argv, NULL);
-}
-
-/*
-// Extracted main loop
-void run_rarch(void) {
-  int ret;
-  do {
-    unsigned sleep_ms = 0;
-    ret = runloop_iterate(&sleep_ms);
-    if (ret == 1 && sleep_ms > 0)
-      retro_sleep(sleep_ms);
-    task_queue_ctl(TASK_QUEUE_CTL_CHECK, NULL);
-  } while (ret != -1);
-  main_exit(NULL);
-};
-
-// Extracted initialization
-void init_rarch () {//(int argc, char *argv[]) {
-  int argc = 4;
-  char *argv[] = {"RetroArch", "super_mario_world.zip", "-L", "snes9x2010_libretro.dylib"};
-
+// Initialization
+void _init_rarch (int argc, char *argv[]) {
   void *args = NULL;
 
   rarch_ctl(RARCH_CTL_PREINIT, NULL);
@@ -58,9 +33,28 @@ void init_rarch () {//(int argc, char *argv[]) {
   }
   ui_companion_driver_init_first();
 }
-*/
+
+////////////////////////////////////////////////////////////////////////////////
+// Run the given rom in the given core
+void init_rarch(char* core, char* rom) {
+  char* source = "retroarch";
+  char* opt = "-L";
+  char* argv[] = {source, rom, opt, core};
+
+  _init_rarch(4, argv);
+}
+
+int step_rarch(void) {
+  unsigned sleep_ms = 0;
+  int ret = runloop_iterate(&sleep_ms);
+  if (ret == 1 && sleep_ms > 0)
+    retro_sleep(sleep_ms);
+  task_queue_ctl(TASK_QUEUE_CTL_CHECK, NULL);
+  return ret;
+}
+
+void exit_rarch() {
+  main_exit(NULL);
+}
+
 %}
-
-int main(int argc, char *argv[]);
-
-//int rarch_main(int argc, char *argv[], void *data);
