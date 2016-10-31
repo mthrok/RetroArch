@@ -1,13 +1,41 @@
 %module retroarch
+
 %{
 #include "retroarch.h"
 #include "runloop.h"
 #include "tasks/tasks_internal.h"
 %}
 
+////////////////////////////////////////////////////////////////////////////////
+// Custom mapping to make rarch_init callable with list arguments
+%typemap(in) (int main_argc, char *main_argv[]) {
+  int i;
+  if (!PyList_Check($input)) {
+    PyErr_SetString(PyExc_ValueError, "Expecting a list");
+    return NULL;
+  }
+  $1 = PyList_Size($input);
+  $2 = (char **) malloc(($1+1)*sizeof(char *));
+  for (i = 0; i < $1; i++) {
+    PyObject *s = PyList_GetItem($input,i);
+    if (!PyString_Check(s)) {
+      free($2);
+      PyErr_SetString(PyExc_ValueError, "List items must be strings");
+      return NULL;
+    }
+    $2[i] = PyString_AsString(s);
+  }
+  $2[i] = 0;
+}
+
+%typemap(freearg) (int main_argc, char *main_argv[]) {
+  if ($2) free($2);
+}
+////////////////////////////////////////////////////////////////////////////////
+
 %inline %{
-// Initialization
-void _init_rarch (int argc, char *argv[]) {
+// UI Initialization
+void rarch_init(int main_argc, char *main_argv[]) {
   void *args = NULL;
 
   rarch_ctl(RARCH_CTL_PREINIT, NULL);
@@ -16,8 +44,8 @@ void _init_rarch (int argc, char *argv[]) {
 
   if (frontend_driver_is_inited()) {
     content_ctx_info_t info;
-    info.argc            = argc;
-    info.argv            = argv;
+    info.argc            = main_argc;
+    info.argv            = main_argv;
     info.args            = args;
     info.environ_get     = frontend_driver_environment_get_ptr();
 
@@ -34,17 +62,8 @@ void _init_rarch (int argc, char *argv[]) {
   ui_companion_driver_init_first();
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Run the given rom in the given core
-void init_rarch(char* core, char* rom) {
-  char* source = "retroarch";
-  char* opt = "-L";
-  char* argv[] = {source, rom, opt, core};
-
-  _init_rarch(4, argv);
-}
-
-int step_rarch(void) {
+// One step
+int rarch_step(void) {
   unsigned sleep_ms = 0;
   int ret = runloop_iterate(&sleep_ms);
   if (ret == 1 && sleep_ms > 0)
@@ -53,7 +72,8 @@ int step_rarch(void) {
   return ret;
 }
 
-void exit_rarch() {
+// Clean up
+void rarch_exit() {
   main_exit(NULL);
 }
 

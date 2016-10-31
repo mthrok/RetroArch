@@ -8,9 +8,9 @@ import retroarch as ra
 core = 'snes9x2010_libretro.{}'.format(
     'dylib' if sys.platform == 'darwin' else 'so')
 
-ra.init_rarch(core, 'puyopuyo.zip')
+ra.rarch_init(['retroarch', 'puyopuyo.zip', '-L', core])
 while True:
-    ret = ra.step_rarch()
+    ret = ra.rarch_step()
     if ret == -1:
         break
-ra.exit_rarch();
+ra.rarch_exit();
