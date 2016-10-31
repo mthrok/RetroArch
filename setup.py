@@ -4,6 +4,8 @@ from __future__ import absolute_import
 
 from distutils.core import setup, Extension
 
+import numpy as np
+
 import make_parser
 
 
@@ -15,7 +17,7 @@ def main():
     module1 = Extension(
         '_retroarch',
         sources=['retroarch_wrap.c'] + _option['source_files'],
-        include_dirs=_option['include_dirs'],
+        include_dirs=[np.get_include()] + _option['include_dirs'],
         extra_compile_args=_option['compile_flags'],
         extra_link_args=_option['ld_flags'],
     )
