@@ -13,6 +13,8 @@ core = 'snes9x2010_libretro.{}'.format(
     'dylib' if sys.platform == 'darwin' else 'so')
 
 ra.rarch_init(['retroarch', 'puyopuyo.zip', '-L', core])
+ra.rarch_get_memory_size()
+
 w, h = ra.rarch_get_frame_size()
 img = np.zeros((h, w, 3), dtype=np.float)
 for i in range(1001):

@@ -1,6 +1,7 @@
 %module retroarch
 %{
 #include "libretro.h"
+#include "core.h"
 #include "retroarch.h"
 #include "runloop.h"
 #include "tasks/tasks_internal.h"
@@ -120,6 +121,46 @@ void rarch_get_frame(unsigned short**frame_buffer,
 %}
 
 %clear (unsigned short**frame_buffer, int *frame_height, int *frame_width);
+
+////////////////////////////////////////////////////////////////////////////////
+// Memory retrieval
+%inline %{
+
+void rarch_get_memory_size() {
+  retro_ctx_memory_info_t info;
+  bool ret;
+
+  info.id = RETRO_MEMORY_SAVE_RAM;
+  ret = core_get_memory(&info);
+  printf("RETRO_MEMORY_SAVE_RAM [%i]: %i\n", info.id, ret);
+  printf("  size: %d\n", info.size);
+  printf("  id:   %u\n", info.id);
+  printf("  data:   %p\n", info.data);
+
+  info.id = RETRO_MEMORY_RTC;
+  ret = core_get_memory(&info);
+  printf("RETRO_MEMORY_RTC [%i]: %i\n", info.id, ret);
+  printf("  size: %d\n", info.size);
+  printf("  id:   %u\n", info.id);
+  printf("  data:   %p\n", info.data);
+
+  info.id = RETRO_MEMORY_SYSTEM_RAM;
+  ret = core_get_memory(&info);
+  printf("RETRO_MEMORY_SYSTEM_RAM [%i]: %i\n", info.id, ret);
+  printf("  size: %d\n", info.size);
+  printf("  id:   %u\n", info.id);
+  printf("  data:   %p\n", info.data);
+
+  info.id = RETRO_MEMORY_VIDEO_RAM;
+  ret = core_get_memory(&info);
+  printf("RETRO_MEMORY_VIDEO_RAM [%i]: %i\n", info.id, ret);
+  printf("  size: %d\n", info.size);
+  printf("  id:   %u\n", info.id);
+  printf("  data:   %p\n", info.data);
+
+}
+
+%}
 
 ////////////////////////////////////////////////////////////////////////////////
 %inline %{
