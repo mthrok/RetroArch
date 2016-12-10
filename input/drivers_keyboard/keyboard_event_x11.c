@@ -1,7 +1,7 @@
 /*  RetroArch - A frontend for libretro.
  *  Copyright (C) 2010-2014 - Hans-Kristian Arntzen
  *  Copyright (C) 2011-2016 - Daniel De Matteis
- * 
+ *
  *  RetroArch is free software: you can redistribute it and/or modify it under the terms
  *  of the GNU General Public License as published by the Free Software Found-
  *  ation, either version 3 of the License, or (at your option) any later version.
@@ -46,7 +46,7 @@ void x11_handle_key_event(XEvent *event, XIC ic, bool filter)
    bool down     = event->type == KeyPress;
    int num       = 0;
    KeySym keysym = 0;
-   
+
    chars[0] = '\0';
 
    if (!filter)
@@ -62,7 +62,7 @@ void x11_handle_key_event(XEvent *event, XIC ic, bool filter)
          /* XwcLookupString doesn't seem to work. */
          num = Xutf8LookupString(ic, &event->xkey, keybuf, ARRAY_SIZE(keybuf), &keysym, &status);
 
-         /* libc functions need UTF-8 locale to work properly, 
+         /* libc functions need UTF-8 locale to work properly,
           * which makes mbrtowc a bit impractical.
           *
           * Use custom UTF8 -> UTF-32 conversion. */
@@ -98,6 +98,7 @@ void x11_handle_key_event(XEvent *event, XIC ic, bool filter)
    if (IsKeypadKey(keysym))
       mod |= RETROKMOD_NUMLOCK;
 
+   printf("Key pressed %d\n", key);
    input_keyboard_event(down, key, chars[0], mod, RETRO_DEVICE_KEYBOARD);
 
    for (i = 1; i < num; i++)

@@ -23,11 +23,13 @@ for i in range(1001):
     img[:, :, 0] = ((frame & 0b1111100000000000) >> 11) / (2 ** 5)
     img[:, :, 1] = ((frame & 0b0000011111100000) >> 5) / (2 ** 6)
     img[:, :, 2] = (frame & 0b0000000000011111) / (2 ** 5)
-    if i > 400 and i % 50 == 0:
-        name = 'frame_{:03d}.png'.format(i)
-        scipy.misc.toimage(img, cmin=0, cmax=1.0).save(name)
-        print('saved', name)
+    # if i > 400 and i % 50 == 0:
+    #     name = 'frame_{:03d}.png'.format(i)
+    #     scipy.misc.toimage(img, cmin=0, cmax=1.0).save(name)
+    #     print('saved', name)
+    # ra.rarch_check_input()
 
     if ret == -1:
         break
-ra.rarch_exit();
+
+ra.rarch_exit()

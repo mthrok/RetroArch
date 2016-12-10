@@ -3,6 +3,7 @@
 #include "libretro.h"
 #include "core.h"
 #include "retroarch.h"
+#include "configuration.h"
 #include "runloop.h"
 #include "tasks/tasks_internal.h"
 #define SWIG_FILE_WITH_INIT
@@ -123,7 +124,7 @@ void rarch_get_frame(unsigned short**frame_buffer,
 %clear (unsigned short**frame_buffer, int *frame_height, int *frame_width);
 
 ////////////////////////////////////////////////////////////////////////////////
-// Memory retrieval
+// Memory retrieval. FIXME
 %inline %{
 
 void rarch_get_memory_size() {
@@ -158,6 +159,37 @@ void rarch_get_memory_size() {
   printf("  id:   %u\n", info.id);
   printf("  data:   %p\n", info.data);
 
+}
+
+%}
+
+////////////////////////////////////////////////////////////////////////////////
+// Input retrieval
+%inline %{
+void rarch_check_input(void) {
+  settings_t *settings = config_get_ptr();
+  // printf("max user: %zu\n", settings->input.max_users);
+  for (size_t i = 0; i < settings->input.max_users; ++i) {
+    struct retro_keybind *bind = settings->input.binds[i];
+    for (size_t j = 0; j < RARCH_BIND_LIST_END; ++j) {
+      struct retro_keybind bind_ = bind[j];
+      /*
+      if (!bind_.valid || bind_.id > 23) {
+	continue;
+      }
+      if (bind_.joykey == 0xFFFF &&
+	  bind_.joyaxis == 0xFFFFFFFF) {
+	continue;
+      }
+      */
+      if (bind_.joykey != bind_.def_joykey) {
+	printf("User %zu: joykey  %zu\n", i, bind_.joykey);
+      }
+      if (bind_.joyaxis != bind_.def_joyaxis) {
+	printf("User %u: joyaxis %u\n", i, bind_.joyaxis);
+      }
+    }
+  }
 }
 
 %}
